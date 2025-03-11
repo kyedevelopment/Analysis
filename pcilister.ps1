@@ -68,16 +68,9 @@ if ($hardwareDevices.Count -eq 0) {
     Write-Host "No PCI hardware devices detected." -ForegroundColor Yellow
 }
 else {
-    Write-Host "Found $($hardwareDevices.Count) PCI hardware devices:" -ForegroundColor Green
-    Write-Host "=========================================" -ForegroundColor Green
+    Write-Host "Found $($hardwareDevices.Count) PCI hardware devices. Displaying results..." -ForegroundColor Green
     
-    foreach ($hardwareDevice in $hardwareDevices) {
-        Write-Host "Name: $($hardwareDevice.Name)" -ForegroundColor Cyan
-        Write-Host "Vendor:Device ID: $($hardwareDevice.VendorID):$($hardwareDevice.DeviceID)"
-        Write-Host "Class: $($hardwareDevice.Class)"
-        Write-Host "PCI Path: $($hardwareDevice.PCIPath)"
-        Write-Host "----------------------------"
-    }
+    $hardwareDevices | Out-GridView -Title "PCI Hardware Devices" -OutputMode None
 }
 
 Write-Host "Scan complete." -ForegroundColor Green
