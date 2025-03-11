@@ -9,15 +9,13 @@ if (-not $isAdmin) {
     exit
 }
 
-Write-Host @"
-  _    _                      
- | |  | |                     
- | |__| | __ ___   _____   ___ 
- |  __  |/ _' \ \ / / _ \ / __|
- | |  | | (_| |\ V / (_) | (__ 
- |_|  |_|\__,_| \_/ \___/ \___|
-                         -kye
-"@ -ForegroundColor Red
+Write-Host "  _    _                      " -ForegroundColor Magenta
+Write-Host " | |  | |                     " -ForegroundColor Magenta
+Write-Host " | |__| | __ ___   _____   ___" -ForegroundColor Magenta
+Write-Host " |  __  |/ _' \ \ / / _ \ / __|" -ForegroundColor Magenta
+Write-Host " | |  | | (_| |\ V / (_) | (__" -ForegroundColor Magenta
+Write-Host " |_|  |_|\__,_| \_/ \___/ \___|" -ForegroundColor Magenta
+Write-Host "                         -kye" -ForegroundColor Magenta
 
 Write-Host "Scanning for PCI hardware devices..." -ForegroundColor Yellow
 
