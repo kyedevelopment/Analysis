@@ -1,4 +1,4 @@
-# This script identifies PCI hardware devices, excluding bridges and infrastructure components
+# This script displays all PCI devices
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
@@ -22,7 +22,7 @@ Write-Host @"
 Write-Host "Scanning for PCI hardware devices..." -ForegroundColor Yellow
 
 $pciDevices = Get-WmiObject Win32_PnPEntity -Filter "PNPDeviceID LIKE 'PCI%'"
-$hardwareDevices = @()
+$allDevices = @()
 
 foreach ($device in $pciDevices) {
     $pciPath = $device.PNPDeviceID
@@ -31,31 +31,56 @@ foreach ($device in $pciDevices) {
     if ($segmentsPCI.Length -lt 2) { continue }
     
     $pciInfo = $segmentsPCI[1].Split('&')
-    $vendorId = if ($pciInfo[0] -match "VEN_([0-9A-F]{4})") { $matches[1] } else { "UNKNOWN" }
-    $deviceId = if ($pciInfo[1] -match "DEV_([0-9A-F]{4})") { $matches[1] } else { "UNKNOWN" }
     
-    $shouldSkip = (
-        $device.Name -like "*PCI-to-PCI*" -or
-        $device.Name -like "*PCI Bridge*" -or
-        $device.Name -like "*PCI Express Root*" -or
-        $device.Name -like "*PCI Express Downstream*" -or
-        $device.Name -like "*PCI Express Upstream*" -or
-        $device.Name -like "*Host Bridge*" -or
-        $device.Name -like "*SM Bus Controller*" -or
-        $device.Name -like "*DRAM Controller*" -or
-        $device.Name -like "*ISA Bridge*" -or
-        $device.Class -eq "System" -and (
-            $device.Name -like "*controller*" -or
-            $device.Name -like "*bridge*"
-        ) -or
-        $device.Name -like "*PCI standard*"
-    )
-    
-    if ($shouldSkip) {
-        continue
+    $vendorId = if ($pciInfo.Length -gt 0) {
+        if ($pciInfo[0] -match "VEN_([0-9A-F]{4})") {
+            $matches[1]
+        } elseif ($pciInfo[0] -match "V([0-9A-F]{4})") {
+            $matches[1]
+        } elseif ($pciInfo[0] -match "^([0-9A-F]{4})$") {
+            $matches[1]
+        } elseif ($pciInfo[0] -match "VENDOR([0-9A-F]{4})") {
+            $matches[1]
+        } elseif ($pciInfo[0] -match "([0-9A-F]{4})h") {
+            $matches[1]
+        } else {
+            "UNKNOWN"
+        }
+    } else {
+        "UNKNOWN"
     }
     
-    $hardwareDevices += [PSCustomObject]@{
+    $deviceId = if ($pciInfo.Length -gt 1) {
+        if ($pciInfo[1] -match "DEV_([0-9A-F]{4})") {
+            $matches[1]
+        } elseif ($pciInfo[1] -match "D([0-9A-F]{4})") {
+            $matches[1]
+        } elseif ($pciInfo[1] -match "^([0-9A-F]{4})$") {
+            $matches[1]
+        } elseif ($pciInfo[1] -match "DEVICE([0-9A-F]{4})") {
+            $matches[1]
+        } elseif ($pciInfo[1] -match "([0-9A-F]{4})h") {
+            $matches[1]
+        } else {
+            "UNKNOWN"
+        }
+    } else {
+        "UNKNOWN"
+    }
+    
+    if ($vendorId -eq "UNKNOWN" -or $deviceId -eq "UNKNOWN") {
+        $fullString = $segmentsPCI[1]
+        
+        if ($vendorId -eq "UNKNOWN" -and $fullString -match "VEN_([0-9A-F]{4})") {
+            $vendorId = $matches[1]
+        }
+        
+        if ($deviceId -eq "UNKNOWN" -and $fullString -match "DEV_([0-9A-F]{4})") {
+            $deviceId = $matches[1]
+        }
+    }
+    
+    $allDevices += [PSCustomObject]@{
         Name = $device.Name
         VendorID = $vendorId
         DeviceID = $deviceId
@@ -64,13 +89,14 @@ foreach ($device in $pciDevices) {
     }
 }
 
-if ($hardwareDevices.Count -eq 0) {
-    Write-Host "No PCI hardware devices detected." -ForegroundColor Yellow
+
+if ($allDevices.Count -eq 0) {
+    Write-Host "No PCI devices detected." -ForegroundColor Red
 }
 else {
-    Write-Host "Found $($hardwareDevices.Count) PCI hardware devices. Displaying results..." -ForegroundColor Green
+    Write-Host "Found $($allDevices.Count) PCI devices. Displaying results..." -ForegroundColor Green
     
-    $hardwareDevices | Out-GridView -Title "PCI Hardware Devices" -OutputMode None
+    $allDevices | Out-GridView -Title "Havoc | PCI Devices" -OutputMode None
 }
 
 Write-Host "Scan complete." -ForegroundColor Green
